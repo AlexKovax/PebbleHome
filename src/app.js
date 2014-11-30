@@ -1,19 +1,60 @@
 /**
- * Welcome to Pebble.js!
+ * Pebble Home project
  *
- * This is where you write your app.
+ * A simple app to make call to a z-way url
  */
 
+//////////////
 //Requires
 var UI = require('ui');
 var Vector2 = require('vector2');
 var ajax = require('ajax');
+var Settings = require('settings');
 
-//Conf
-var host = "home.kovaxlabs.com";
-var port = "8083";
-var deviceNumber = 2;
+////////////////////
+// Setting config
 
+var options = Settings.option();//Loading saved values
+
+Settings.config(
+  { url: 'http://darkar.free.fr/pebble/settings.html?' + encodeURIComponent(JSON.stringify(options))},
+  function(e) {
+		//Callback on opening
+    console.log('opening configurable');
+		console.log(JSON.stringify(options));
+  },
+  function(e) {
+		//Callback on closing
+		// Show the parsed response
+    console.log(JSON.stringify(e.options));
+
+    // Show the raw response if parsing failed
+    if (e.failed) {
+      console.log(e.response);
+    }
+    console.log('closed configurable');
+  }
+);
+
+//////////////////
+//loading config
+
+var error = new UI.Card();
+error.title('Heating system');
+error.subtitle('Error');
+
+var host = options.host;
+var port = options.port;
+var deviceNumber = options.number;
+
+if(host === "" || port === "" || deviceNumber === ""){
+	error.body('App wasn\'t fully configured...');
+	error.show();	
+	return;
+}
+
+/////////
+//Init
 var urlBase = "http://" + host + ":" + port + "/ZWaveAPI/Run/devices[" + deviceNumber +"].instances[0]";
 var urlTurnON = urlBase + ".SwitchBinary.Set(255)";
 var urlTurnOFF = urlBase + ".SwitchBinary.Set(0)";
