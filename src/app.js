@@ -53,6 +53,7 @@ if(host === "" || port === "" || deviceNumber === ""){
 	return;
 }
 
+
 /////////
 //Init
 var urlBase = "http://" + host + ":" + port + "/ZWaveAPI/Run/devices[" + deviceNumber +"].instances[0]";
@@ -60,71 +61,89 @@ var urlTurnON = urlBase + ".SwitchBinary.Set(255)";
 var urlTurnOFF = urlBase + ".SwitchBinary.Set(0)";
 var urlGetStatus = urlBase + ".commandClasses[37].Get()";
 
-//Main
-var main = new UI.Card({
-  title: 'Home suite 1.0',
-  icon: 'images/menu_icon.png',
-  subtitle: 'Heating control',
-  body: 'Press UP to turn the heater on, DOWN to turn the heater off and SELECT for status'
+///////////////////
+// Get status and display main screen
+
+//Display the status
+var wind = new UI.Window();
+
+//Title part
+var title = new UI.Text({
+	position: new Vector2(10, 40),
+	size: new Vector2(124, 30),
+	font: 'gothic-24-bold',
+	text: 'Pebble Home',
+	textAlign: 'left'
 });
+wind.add(title);
 
-main.show();
+//Status part
+var status = new UI.Text({
+	position: new Vector2(10, 70),
+	size: new Vector2(124, 30),
+	font: 'gothic-18-bold',
+	text: 'Status: loading...',
+	textAlign: 'left'
+});
+wind.add(status);
 
-/////////////////
-//Events
-var card = new UI.Card();
-card.title('Heating system');
-card.subtitle('Confirmation');
+var onLabel = new UI.Text({
+	position: new Vector2(90, 10),
+	size: new Vector2(40, 20),
+	font: 'gothic-24-bold',
+	text: 'ON >',
+	textAlign: 'right'
+});
+wind.add(onLabel);
 
-//BUTTON UP = ON
-main.on('click', 'up', function(e) {
-	//Send Ajax request to turn ON the heater
-	ajax({ url: urlTurnON, type: 'json' },
-		function(data) {			
+var offLabel = new UI.Text({
+	position: new Vector2(80, 114),
+	size: new Vector2(50, 20),
+	font: 'gothic-24-bold',
+	text: 'OFF >',
+	textAlign: 'right'
+});
+wind.add(offLabel);
+
+wind.show();
+
+bindUpHandler(wind,status);
+bindDownHandler(wind,status);
+
+
+/////////////
+//Functions
+
+function bindUpHandler(windowElt,label){
+	//BUTTON UP = ON
+	windowElt.on('click', 'up', function(e) {
+		//Send Ajax request to turn ON the heater
+		ajax({ url: urlTurnON, type: 'json' },
+			function(data) {			
 				//Display confirmation
-				card.body('Ajax request ON was sent...');
-				card.show();
-		},
-		function(error) {
+				label.text("Status: ON");
+			},
+			function(error) {
 				console.log(error);
-				card.body('There was an error...');
-				card.show();			
-		}
-	);
-});
+				label.text("Status: error...");	
+			}
+		);
+	});	
+}
 
-
-//BUTTON DOWN = OFF
-main.on('click', 'down', function(e) {
-	//Send Ajax request to turn OFF the heater
-	ajax({ url: urlTurnOFF, type: 'json' },
-		function(data) {		
+function bindDownHandler(windowElt,label){
+	//BUTTON DOWN = OFF
+	windowElt.on('click', 'down', function(e) {
+		//Send Ajax request to turn OFF the heater
+		ajax({ url: urlTurnOFF, type: 'json' },
+			function(data) {		
 				//Display confirmation
-				card.body('Ajax request OFF was sent...');
-				card.show();
-		},
-		function(error) {
+				label.text("Status: OFF");
+			},
+			function(error) {
 				console.log(error);
-				card.body('There was an error...');
-				card.show();			
-		}			 
-	);
-});
-
-//BUTTON SELECT = STATUS
-main.on('click', 'select', function(e) {
-	//Get the status (todo)
-	var status = "ON";
-	
-	//Display the status
-  var wind = new UI.Window();
-  var textfield = new UI.Text({
-    position: new Vector2(0, 50),
-    size: new Vector2(144, 30),
-    font: 'gothic-24-bold',
-		text: 'Status: ' + status,
-    textAlign: 'center'
-  });
-  wind.add(textfield);
-  wind.show();
-});
+				label.text("Status: error...");
+			}			 
+		);
+	});	
+}
