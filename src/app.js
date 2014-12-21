@@ -1,7 +1,8 @@
 /**
  * Pebble Home project
  *
- * A simple app to make call to a z-way url
+ * A simple app to make call to a Z-Way url
+ * By Alex
  */
 
 //////////////
@@ -60,14 +61,15 @@ var urlBase = "http://" + host + ":" + port + "/ZWaveAPI/Run/devices[" + deviceN
 var urlTurnON = urlBase + ".SwitchBinary.Set(255)";
 var urlTurnOFF = urlBase + ".SwitchBinary.Set(0)";
 var urlGetStatus = urlBase + ".commandClasses[37].Get()";
+var urlGetData =  "http://" + host + ":" + port + '/ZWaveAPI/Data/';
 
 ///////////////////
 // Get status and display main screen
 
-//Display the status
+//Main window is a freeform UI
 var wind = new UI.Window();
 
-//Title part
+//Title label
 var title = new UI.Text({
 	position: new Vector2(10, 40),
 	size: new Vector2(124, 30),
@@ -77,16 +79,17 @@ var title = new UI.Text({
 });
 wind.add(title);
 
-//Status part
-var status = new UI.Text({
+//Status label
+var statusLabel = new UI.Text({
 	position: new Vector2(10, 70),
 	size: new Vector2(124, 30),
 	font: 'gothic-18-bold',
 	text: 'Status: loading...',
 	textAlign: 'left'
 });
-wind.add(status);
+wind.add(statusLabel);
 
+//On label next to the UP button
 var onLabel = new UI.Text({
 	position: new Vector2(90, 10),
 	size: new Vector2(40, 20),
@@ -96,6 +99,7 @@ var onLabel = new UI.Text({
 });
 wind.add(onLabel);
 
+//Off label next to the DOWN button
 var offLabel = new UI.Text({
 	position: new Vector2(80, 114),
 	size: new Vector2(50, 20),
@@ -105,15 +109,52 @@ var offLabel = new UI.Text({
 });
 wind.add(offLabel);
 
-wind.show();
+wind.show();//Loading screen...
 
-bindUpHandler(wind,status);
-bindDownHandler(wind,status);
+getCurrentStatus(statusLabel);//Updates the screen with the current status
+
+bindUpHandler(wind,statusLabel);
+bindDownHandler(wind,statusLabel);
 
 
 /////////////
 //Functions
 
+//Z-Way protocol requires to make an "update" request before getting the status in a second request
+function getCurrentStatus(label){
+	ajax({url: urlGetStatus, type:'json'},
+			function(data){
+				//success
+				//Second request to get the current value of the switch
+				updateCurrentStatus(label);
+			},
+			function(error){
+				//error
+				console.log(error);
+			});
+}
+
+//This function gets the value of the Z-Wave switch and updates the label accordingly
+function updateCurrentStatus(label){
+	var currentUrl = urlGetData + Math.floor(Date.now() / 1000);
+	ajax({url: currentUrl, type:'json'},
+		function(data){
+			//Get the status in the json response
+			var isOn = data["devices."+deviceNumber+".instances.0.commandClasses.37.data.level"]["value"];
+			if(isOn){
+				label.text('Status: ON');
+			}else{
+				label.text('Status: OFF');
+			}
+		},
+		function(error){
+			console.log(error);
+			label.text("Status: init error");
+		}
+	);	
+}
+
+//Click handler for the UP button
 function bindUpHandler(windowElt,label){
 	//BUTTON UP = ON
 	windowElt.on('click', 'up', function(e) {
@@ -131,6 +172,7 @@ function bindUpHandler(windowElt,label){
 	});	
 }
 
+//Click handler for the DOWN button
 function bindDownHandler(windowElt,label){
 	//BUTTON DOWN = OFF
 	windowElt.on('click', 'down', function(e) {
