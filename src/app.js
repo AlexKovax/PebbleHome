@@ -120,7 +120,7 @@ bindDownHandler(wind,statusLabel);
 /////////////
 //Functions
 
-//Z-Way protocol requires to make an "update" request before getting the status in a second request
+//Z-Way protocol requires to make a "status" request before getting the value in a second request
 //Once the status request has been made we need to save the timestamp (minus one second to be sure) as the second request will need it as a parameter
 //Details of the protocol in http://razberry.z-wave.me/docs/zwayDev.pdf
 function getCurrentStatus(label){
@@ -139,8 +139,7 @@ function getCurrentStatus(label){
 
 //This function gets the value of the Z-Wave switch and updates the label accordingly
 function updateCurrentStatus(label,ts){
-	var currentUrl = urlGetData + ts;
-	
+	var currentUrl = urlGetData + ts;	
 	ajax({url: currentUrl, type:'json'},
 		function(data){
 			//This Ajax call returns an associative array of changes in Z-Way data tree since <timestamp>. For more details see http://razberry.z-wave.me/docs/zwayDev.pdf
