@@ -121,12 +121,15 @@ bindDownHandler(wind,statusLabel);
 //Functions
 
 //Z-Way protocol requires to make an "update" request before getting the status in a second request
+//Once the status request has been made we need to save the timestamp (minus one second to be sure) as the second request will need it as a parameter
+//Details of the protocol in http://razberry.z-wave.me/docs/zwayDev.pdf
 function getCurrentStatus(label){
+	var timestampUpdate = (Math.floor(Date.now() / 1000) - 1);//We need the timestamp for the "get"" request
 	ajax({url: urlGetStatus, type:'json'},
 			function(data){
 				//success
 				//Second request to get the current value of the switch
-				updateCurrentStatus(label);
+				setTimeout(function(){ updateCurrentStatus(label,timestampUpdate) }, 1000);
 			},
 			function(error){
 				//error
@@ -135,16 +138,22 @@ function getCurrentStatus(label){
 }
 
 //This function gets the value of the Z-Wave switch and updates the label accordingly
-function updateCurrentStatus(label){
-	var currentUrl = urlGetData + Math.floor(Date.now() / 1000);
+function updateCurrentStatus(label,ts){
+	var currentUrl = urlGetData + ts;
+	
 	ajax({url: currentUrl, type:'json'},
 		function(data){
+			//This Ajax call returns an associative array of changes in Z-Way data tree since <timestamp>. For more details see http://razberry.z-wave.me/docs/zwayDev.pdf
 			//Get the status in the json response
-			var isOn = data["devices."+deviceNumber+".instances.0.commandClasses.37.data.level"]["value"];
-			if(isOn){
-				label.text('Status: ON');
+			if(typeof data["devices."+deviceNumber+".instances.0.commandClasses.37.data.level"] !== "undefined"){
+				var isOn = data["devices."+deviceNumber+".instances.0.commandClasses.37.data.level"]["value"];
+				if(isOn){
+					label.text('Status: ON');
+				}else{
+					label.text('Status: OFF');
+				}
 			}else{
-				label.text('Status: OFF');
+				label.text("Status: init error");
 			}
 		},
 		function(error){
